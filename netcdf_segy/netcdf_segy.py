@@ -19,16 +19,18 @@ def segy2netcdf(segy, netcdf, d0, d):
         ns = len(segy.samples)
         ntraces = segy.tracecount
 
-        dim_name_len = _make_dim_name_len(d0, ns, d)
+        dim_names, dim_lens = _make_dim_name_len(d0, ns, d)
         dims_ntraces = _count_traces_in_user_dims(d)
 
         _check_user_dims(dims_ntraces, ntraces)
 
-        _fill_missing_dims(dims_ntraces, ntraces, dim_name_len)
+        _fill_missing_dims(dims_ntraces, ntraces, dim_names, dim_lens)
 
         rootgrp = Dataset(netcdf, "w", format="NETCDF4")
-        dims = _create_dimensions(dim_name_len)
-        netcdf = rootgrp.createVariable("Samples","f4",("time",))
+        dims = _create_dimensions(dim_names, dim_lens)
+        samples = rootgrp.createVariable("Samples","f4",tuple(dim_names))
+        _set_attributes(segy, rootgrp)
+        _copy_data(segy, samples, rootgrp.dimensions)
 
         rootgrp.close()
 
@@ -40,10 +42,12 @@ def netcdf2segy(netcdf, segy):
     click.echo('hi n2s %s %s' % (netcdf, segy))
 
 def _make_dim_name_len(d0, ns, d):
-    dim_name_len = [(d0, ns)]
+    dim_names = [d0]
+    dim_lens = [ns]
     for dim in d:
-        dim_name_len.append(dim)
-    return dim_name_len
+        dim_names.append(dim[0])
+        dim_lens.append(dim[1])
+    return dim_names, dim_lens
 
 
 def _count_traces_in_user_dims(d):
@@ -61,12 +65,40 @@ def _check_user_dims(dims_ntraces, ntraces):
         but this does not divide into the %d traces in the file''' %
         (dims_ntraces, ntraces))
 
-def _fill_missing_dims(dims_ntraces, ntraces, dim_name_len):
+def _fill_missing_dims(dims_ntraces, ntraces, dim_names, dim_lens):
     if dims_ntraces > ntraces:
-        dim_name_len.append(('traces', ntraces / dims_ntraces))
+        dim_names.append('traces')
+        dim_lens.append(ntraces / dims_ntraces)
 
-def _create_dimensions(dim_name_len):
+def _create_dimensions(dim_names, dim_lens):
     dims = []
-    for dim in dim_name_len:
+    for dim in zip(dim_names, dim_lens):
         dims.append(rootgrp.createDimension(dim[0], dim[1]))
     return dims
+
+def _set_attributes(segy, netcdf):
+    pass
+
+def _copy_data(segy, variable, dims):
+    dim_names = _get_dim_names(dims)
+    header_fields = _get_header_fields(dim_names)
+    for trace in segy.traces:
+
+def _get_dim_names(dims):
+    dim_names = []
+    for dim in dims:
+        dim_names.append(dim.name)
+    return dim_names
+
+def _get_header_fields(dim_names):
+    header_fields = []
+    # exclude first dimension, as that is the sample index (not in header)
+    for dim in dim_names[1:]:
+        header_fields.append(eval('segyio.TraceField.%s' % dim))
+    return header_fields
+
+def _get_coords(segy, header_fields):
+    coords = []
+    for field in header_fields:
+        coords.append()
+
