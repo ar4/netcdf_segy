@@ -109,8 +109,11 @@ def _create_traceheader_variables(segy, rootgrp, dim_names):
 
     return variables
 
-def _set_attributes(segy, netcdf):
-    pass
+def _set_attributes(segy, rootgrp):
+    rootgrp.bin = str(segy.bin)
+    rootgrp.text = segy.text[0]
+    if segy.ext_headers:
+        rootgrp.ext_headers = segy.text[1]
 
 def _copy_data(segy, variables, dim_names, dim_lens):
     traceIDs = np.reshape(np.arange(segy.tracecount), dim_lens[:-1])
