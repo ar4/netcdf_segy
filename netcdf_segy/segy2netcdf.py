@@ -21,7 +21,9 @@ from netCDF4 import Dataset
         'ShotPoint is a trace header name, the trace header values will be '
         'used as coordinates for that dimension. GroupNumber is not a '
         'header name, so the coordinates of that dimension will be 0 to 4.')
-def segy2netcdf(segy_path, netcdf_path, samples_dim_name, d):
+@click.option('--compress/--no-compress', default=False,
+        help='turn on or off NetCDF compression (default off).')
+def segy2netcdf(segy_path, netcdf_path, samples_dim_name, d, compress):
 
     # set default name for trace samples dimension
     if not samples_dim_name:
@@ -29,7 +31,6 @@ def segy2netcdf(segy_path, netcdf_path, samples_dim_name, d):
 
     with segyio.open(segy_path) as segy:
         ns = len(segy.samples)
-        ds = segyio.dt(segy)/1e6
         ntraces = segy.tracecount
 
         dim_names, dim_lens = _make_dim_name_len(samples_dim_name, ns, d)
@@ -41,7 +42,7 @@ def segy2netcdf(segy_path, netcdf_path, samples_dim_name, d):
 
         rootgrp = Dataset(netcdf_path, "w", format="NETCDF4")
         _create_dimensions(dim_names, dim_lens, rootgrp)
-        variables = _create_variables(segy, rootgrp, dim_names)
+        variables = _create_variables(segy, rootgrp, dim_names, compress)
         _set_attributes(segy, rootgrp)
         _copy_data(segy, variables, dim_names, dim_lens)
 
@@ -82,13 +83,17 @@ def _create_dimensions(dim_names, dim_lens, rootgrp):
         rootgrp.createDimension(dim[0], dim[1])
 
 
-def _create_variables(segy, rootgrp, dim_names):
+def _create_variables(segy, rootgrp, dim_names, compress):
     variables = []
-    variables.append(rootgrp.createVariable("Samples", "f4", tuple(dim_names)))
-    variables += _create_traceheader_variables(segy, rootgrp, dim_names)
+    # Trace data
+    variables.append(rootgrp.createVariable("Samples", "f4", tuple(dim_names), zlib=compress))
+    # Time/Depth dimension
+    variables.append(rootgrp.createVariable(dim_names[-1], "f4", dim_names[-1], zlib=compress))
+    # Other dimensions
+    variables += _create_traceheader_variables(segy, rootgrp, dim_names, compress)
     return variables
 
-def _create_traceheader_variables(segy, rootgrp, dim_names):
+def _create_traceheader_variables(segy, rootgrp, dim_names, compress):
     fields = [attr for attr in dir(segyio.TraceField) if not callable(getattr(segyio.TraceField, attr)) and not attr.startswith("__")] 
     variables = []
     for field in fields:
@@ -96,9 +101,9 @@ def _create_traceheader_variables(segy, rootgrp, dim_names):
         # size of their dimension. All others should be the size of the dataset
         # (excluding the trace samples dimension)
         if field in dim_names:
-            variables.append(rootgrp.createVariable(field, "i4", field))
+            variables.append(rootgrp.createVariable(field, "i4", field, zlib=compress))
         else:
-            variables.append(rootgrp.createVariable(field, "i4", tuple(dim_names[:-1])))
+            variables.append(rootgrp.createVariable(field, "i4", tuple(dim_names[:-1]), zlib=compress))
 
     return variables
 
@@ -112,16 +117,19 @@ def _copy_data(segy, variables, dim_names, dim_lens):
     traceIDs = np.reshape(np.arange(segy.tracecount), dim_lens[:-1])
     n_trace_dims = len(dim_names[:-1])
     for v in variables:
-        v_traceIDs = get_variable_traceIDs(v, n_trace_dims, dim_names, traceIDs)
         if v.name == 'Samples':
             print('starting trace copy')
             v[:] = segy.trace.raw[:]
+        elif v.name == dim_names[-1]:
+            print('starting time/depth copy')
+            v[:] = segyio.sample_indexes(segy)
         else:
             print('starting', v.name)
+            v_traceIDs = _get_variable_traceIDs(v, n_trace_dims, dim_names, traceIDs)
             header_field = _get_header_field(v.name)
             v[:] = segy.attributes(header_field)[v_traceIDs.flatten()[:]]
 
-def get_variable_traceIDs(variable, n_trace_dims, dim_names, traceIDs):
+def _get_variable_traceIDs(variable, n_trace_dims, dim_names, traceIDs):
     vdims = ['1,'] * n_trace_dims
     if variable.name == 'Samples':
         v_trace_dims = variable.dimensions[:-1]
