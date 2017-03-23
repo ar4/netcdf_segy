@@ -47,13 +47,6 @@ def segy2netcdf(segy_path, netcdf_path, samples_dim_name, d):
 
         rootgrp.close()
 
-
-@click.command()
-@click.argument('netcdf', type=click.Path(exists=True, dir_okay=False))
-@click.argument('segy', type=click.Path())
-def netcdf2segy(netcdf, segy):
-    click.echo('hi n2s %s %s' % (netcdf, segy))
-
 def _make_dim_name_len(samples_dim_name, ns, d):
     dim_names = []
     dim_lens = []

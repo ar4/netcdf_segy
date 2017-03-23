@@ -12,7 +12,8 @@ with open('HISTORY.rst') as history_file:
 requirements = [
     'Click>=6.0',
     'segyio',
-    'netCDF4'
+    'netCDF4',
+    'numpy'
 ]
 
 test_requirements = [
@@ -34,8 +35,8 @@ setup(
                  'netcdf_segy'},
     entry_points={
         'console_scripts': [
-            'segy2netcdf=netcdf_segy.netcdf_segy:segy2netcdf',
-            'netcdf2segy=netcdf_segy.netcdf_segy:netcdf2segy'
+            'segy2netcdf=netcdf_segy.segy2netcdf:segy2netcdf',
+            'netcdf2segy=netcdf_segy.netcdf2segy:netcdf2segy'
         ]
     },
     include_package_data=True,
