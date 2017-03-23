@@ -18,14 +18,16 @@ from netCDF4 import Dataset
         'names), then the header values will be used for the dimension '
         'coordinates, otherwise the dimension coordinates will start at '
         '0 and increment by 1. '
-        'E.g. -d ShotPoint 10 -d GroupNumber 5, indicates that the data '
+        'E.g. -d FieldRecord 10 -d GroupNumber 5, indicates that the data '
         'consists of 10 shot gathers, each with 5 receiver traces. As '
-        'ShotPoint is a trace header name, the trace header values will be '
+        'FieldRecord is a trace header name, the trace header values will be '
         'used as coordinates for that dimension. GroupNumber is not a '
         'header name, so the coordinates of that dimension will be 0 to 4.')
 @click.option('--compress/--no-compress', default=False,
         help='turn on or off NetCDF compression (default off).')
-def segy2netcdf(segy_path, netcdf_path, samples_dim_name, d, compress):
+@click.option('--verbose/--quiet', default=False,
+        help='turn on or off verbose output (default off).')
+def segy2netcdf(segy_path, netcdf_path, samples_dim_name, d, compress, verbose):
     '''Convert a SEG-Y file to a NetCDF file.
 
        segy_path: path to input SEG-Y file
@@ -33,6 +35,7 @@ def segy2netcdf(segy_path, netcdf_path, samples_dim_name, d, compress):
        samples_dim_name: name of trace samples dimension (usually Time or Depth)
        d: tuple of (name, len) tuples for each dimension, slowest to fastest order
        compress: boolean flag indicating whether NetCDF compression should be used
+       verbose: boolean flag indicating whether to print progress
     '''
 
     # set default name for trace samples dimension
@@ -150,7 +153,7 @@ def _set_attributes(segy, rootgrp):
     if segy.ext_headers:
         rootgrp.ext_headers = segy.text[1]
 
-def _copy_data(segy, variables, dim_names, dim_lens):
+def _copy_data(segy, variables, dim_names, dim_lens, verbose):
     '''Copy the data to the NetCDF file.
        Trace data, Time/Depth dimension indices, and trace header values are copied.
     '''
@@ -158,13 +161,16 @@ def _copy_data(segy, variables, dim_names, dim_lens):
     n_trace_dims = len(dim_names[:-1])
     for v in variables:
         if v.name == 'Samples':
-            print('starting trace copy')
+            if verbose:
+                click.echo('copying trace data')
             v[:] = segy.trace.raw[:]
         elif v.name == dim_names[-1]:
-            print('starting time/depth indices copy')
+            if verbose:
+                click.echo('copying time/depth indices')
             v[:] = segyio.sample_indexes(segy)
         else:
-            print('starting', v.name)
+            if verbose:
+                click.echo('copying %s' % v.name)
             v_traceIDs = _get_variable_traceIDs(v, n_trace_dims, dim_names, traceIDs)
             header_field = _get_header_field(v.name)
             v[:] = segy.attributes(header_field)[v_traceIDs.flatten()[:]]
