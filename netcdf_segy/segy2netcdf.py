@@ -84,11 +84,16 @@ def _check_user_dims(dims_ntraces, ntraces):
     '''
     if dims_ntraces > ntraces:
         raise ValueError('supplied dimensions imply %d traces, '
-        'but only %d in file' % (dims_ntraces, ntraces))
-    if ntraces % dims_ntraces != 0:
+                'but only %d in file' % (dims_ntraces, ntraces))
+    if dims_ntraces < 0:
+        raise ValueError('supplied dimensions imply %d traces' % dims_ntraces)
+    if (dims_ntraces == 0) and (ntraces > 0):
+        raise ValueError('supplied dimensions imply %d traces, ' 
+                'but %d in file' % (dims_ntraces, ntraces))
+    if (dims_ntraces != 0) and (ntraces % dims_ntraces != 0):
         raise ValueError('supplied dimensions imply %d traces, '
-        'but this does not divide into the %d traces in the file' %
-        (dims_ntraces, ntraces))
+                'but this does not divide into the %d traces in the file' %
+                (dims_ntraces, ntraces))
 
 def _fill_missing_dims(dims_ntraces, ntraces, dim_names, dim_lens):
     '''Make a new dimension (if necessary) for unaccounted traces.
@@ -156,7 +161,7 @@ def _copy_data(segy, variables, dim_names, dim_lens):
             print('starting trace copy')
             v[:] = segy.trace.raw[:]
         elif v.name == dim_names[-1]:
-            print('starting time/depth copy')
+            print('starting time/depth indices copy')
             v[:] = segyio.sample_indexes(segy)
         else:
             print('starting', v.name)
