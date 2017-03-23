@@ -52,7 +52,7 @@ def segy2netcdf(segy_path, netcdf_path, samples_dim_name, d, compress):
 
         rootgrp = Dataset(netcdf_path, "w", format="NETCDF4")
         _create_dimensions(dim_names, dim_lens, rootgrp)
-        variables = _create_variables(segy, rootgrp, dim_names, compress)
+        variables = _create_variables(rootgrp, dim_names, compress)
         _set_attributes(segy, rootgrp)
         _copy_data(segy, variables, dim_names, dim_lens)
 
@@ -104,7 +104,7 @@ def _create_dimensions(dim_names, dim_lens, rootgrp):
         rootgrp.createDimension(dim[0], dim[1])
 
 
-def _create_variables(segy, rootgrp, dim_names, compress):
+def _create_variables(rootgrp, dim_names, compress):
     '''Create variables in the NetCDF file.
        The trace data, Time/Depth dimension, and trace headers, are all created as variables.
     '''
@@ -114,15 +114,17 @@ def _create_variables(segy, rootgrp, dim_names, compress):
     # Time/Depth dimension
     variables.append(rootgrp.createVariable(dim_names[-1], "f4", dim_names[-1], zlib=compress))
     # Other dimensions
-    variables += _create_traceheader_variables(segy, rootgrp, dim_names, compress)
+    variables += _create_traceheader_variables(rootgrp, dim_names, compress)
     return variables
 
-def _create_traceheader_variables(segy, rootgrp, dim_names, compress):
+def _create_traceheader_variables(rootgrp, dim_names, compress):
     '''Create NetCDF variables for each trace header field.
        Fields that are used as dimensions are only the length of that dimension,
        others have one entry for every trace.
     '''
-    fields = [attr for attr in dir(segyio.TraceField) if not callable(getattr(segyio.TraceField, attr)) and not attr.startswith("__")] 
+    fields = [attr for attr in dir(segyio.TraceField)
+            if not callable(getattr(segyio.TraceField, attr))
+            and not attr.startswith("__")]
     variables = []
     for field in fields:
         # for variables that are dimensions of the dataset, they should be the
@@ -169,7 +171,7 @@ def _get_variable_traceIDs(variable, n_trace_dims, dim_names, traceIDs):
     '''
     vdims = ['1,'] * n_trace_dims
     v_trace_dims = variable.dimensions
-    for i, d in enumerate(v_trace_dims):
+    for d in v_trace_dims:
         d_idx = dim_names.index(d)
         vdims[d_idx] = ':,'
     v_traceIDs = np.array(eval('traceIDs[%s]' % ''.join(vdims)))
@@ -180,6 +182,6 @@ def _get_header_field(name):
     '''
     try:
         field = eval('segyio.TraceField.%s' % name)
-    except:
+    except AttributeError:
         field = None
     return field
