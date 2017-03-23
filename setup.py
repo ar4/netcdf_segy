@@ -35,7 +35,7 @@ setup(
                  'netcdf_segy'},
     entry_points={
         'console_scripts': [
-            'segy2netcdf=netcdf_segy.segy2netcdf:segy2netcdf',
+            'segy2netcdf=netcdf_segy.segy2netcdf:cli',
             'netcdf2segy=netcdf_segy.netcdf2segy:netcdf2segy'
         ]
     },

@@ -27,6 +27,11 @@ from netCDF4 import Dataset
         help='turn on or off NetCDF compression (default off).')
 @click.option('--verbose/--quiet', default=False,
         help='turn on or off verbose output (default off).')
+def cli(segy_path, netcdf_path, samples_dim_name, d, compress, verbose):
+    '''Click CLI for segy2netcdf.
+    '''
+    segy2netcdf(segy_path, netcdf_path, samples_dim_name, d, compress, verbose)
+
 def segy2netcdf(segy_path, netcdf_path, samples_dim_name, d, compress, verbose):
     '''Convert a SEG-Y file to a NetCDF file.
 
@@ -57,7 +62,7 @@ def segy2netcdf(segy_path, netcdf_path, samples_dim_name, d, compress, verbose):
         _create_dimensions(dim_names, dim_lens, rootgrp)
         variables = _create_variables(rootgrp, dim_names, compress)
         _set_attributes(segy, rootgrp)
-        _copy_data(segy, variables, dim_names, dim_lens)
+        _copy_data(segy, variables, dim_names, dim_lens, verbose)
 
         rootgrp.close()
 

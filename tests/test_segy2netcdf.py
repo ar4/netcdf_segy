@@ -238,3 +238,13 @@ class Test_copy_data:
     def test_copy1(self, segy1, rootgrp_vars, dim_names1, dim_lens1):
         segy2netcdf._copy_data(segy1, rootgrp_vars.variables.values(), dim_names1, dim_lens1, False)
         check_data1(rootgrp_vars.variables)
+
+class Test_segy2netcdf:
+    def test_1(self, tmpdir, dim_names1, dim_lens1):
+        # :-1 below to exclude 'Time' dimension, as this is provided separately
+        d = tuple([(x,y) for x,y in zip(dim_names1[:-1], dim_lens1[:-1])])
+        netcdf_path = tmpdir.join('tmp.nc')
+        segy2netcdf.segy2netcdf('tests/testsegy1.segy', netcdf_path, 'Time', d, False, False)
+        rootgrp = Dataset(netcdf_path, "r", format="NETCDF4")
+        check_data1(rootgrp.variables)
+        rootgrp.close()
