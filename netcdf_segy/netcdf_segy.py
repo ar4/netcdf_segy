@@ -115,27 +115,14 @@ def _set_attributes(segy, netcdf):
 def _copy_data(segy, variables, dim_names, dim_lens):
     traceIDs = np.reshape(np.arange(segy.tracecount), dim_lens[:-1])
     n_trace_dims = len(dim_names[:-1])
-    print('ntracedims', n_trace_dims, 'dim_names', dim_names)
     for v in variables:
         v_traceIDs = get_variable_traceIDs(v, n_trace_dims, dim_names, traceIDs)
         if v.name == 'Samples':
             print('starting trace copy')
             v[:] = segy.trace.raw[:]
-            print('finished trace copy')
-            #it = np.nditer(v_traceIDs, flags=['multi_index'], op_flags=['readonly'])
-            #while not it.finished:
-                #print('idx', it.multi_index)
-                #print('vtid shape', v_traceIDs.shape)
-                #print('tid', v_traceIDs[it.multi_index[:-1]])
-                #print('samp', eval('segy.trace[%d]' % v_traceIDs[it.multi_index[:-1]]))
-                #v[it.multi_index, :] = segy.trace[int(v_traceIDs[it.multi_index])]
         else:
             print('starting', v.name)
             header_field = _get_header_field(v.name)
-            #it = np.nditer(v_traceIDs, flags=['multi_index'], op_flags=['readonly'])
-            #while not it.finished:
-            #    v[it.multi_index] = segy.attributes(header_field)[int(v_traceIDs[it.multi_index])]
-            print('vshape', v.shape, 'vtid shape', v_traceIDs.shape, v_traceIDs[:].shape, v_traceIDs.flatten()[:].shape)
             v[:] = segy.attributes(header_field)[v_traceIDs.flatten()[:]]
 
 def get_variable_traceIDs(variable, n_trace_dims, dim_names, traceIDs):
