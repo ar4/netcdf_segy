@@ -8,25 +8,31 @@ import segyio
 import numpy as np
 from netcdf_segy import segy2netcdf
 
+
 @pytest.fixture
 def d_all_headers():
     return (('ShotPoint', 3), ('GroupX', 10))
+
 
 @pytest.fixture
 def d_mixed_headers():
     return (('ShotPoint', 3), ('ReceiverID', 10))
 
+
 @pytest.fixture
 def d_no_headers():
     return (('ShotID', 3), ('ReceiverID', 10))
+
 
 @pytest.fixture
 def dim_names1():
     return ['FieldRecord', 'ReceiverID', 'Time']
 
+
 @pytest.fixture
 def dim_lens1():
     return [3, 10, 20]
+
 
 @pytest.fixture
 def rootgrp_empty(tmpdir):
@@ -34,12 +40,14 @@ def rootgrp_empty(tmpdir):
     yield rootgrp
     rootgrp.close()
 
+
 @pytest.fixture
 def rootgrp_dims(tmpdir, dim_names1, dim_lens1):
     rootgrp = Dataset(tmpdir.join('tmp.nc'), "w", format="NETCDF4")
     segy2netcdf._create_dimensions(dim_names1, dim_lens1, rootgrp)
     yield rootgrp
     rootgrp.close()
+
 
 @pytest.fixture
 def rootgrp_vars(tmpdir, dim_names1, dim_lens1):
@@ -49,15 +57,18 @@ def rootgrp_vars(tmpdir, dim_names1, dim_lens1):
     yield rootgrp
     rootgrp.close()
 
+
 @pytest.fixture
 def segy1():
     segy1 = segyio.open('tests/testsegy1.segy')
     yield segy1
     segy1.close()
 
+
 class Test_make_dim_name_len:
     def test_all_args(self, d_all_headers):
-        dim_names, dim_lens = segy2netcdf._make_dim_name_len('Time', 5, d_all_headers)
+        dim_names, dim_lens = segy2netcdf._make_dim_name_len('Time', 5,
+                                                             d_all_headers)
         assert dim_names == ['ShotPoint', 'GroupX', 'Time']
         assert dim_lens == [3, 10, 5]
 
@@ -65,6 +76,7 @@ class Test_make_dim_name_len:
         dim_names, dim_lens = segy2netcdf._make_dim_name_len('Time', 5, ())
         assert dim_names == ['Time']
         assert dim_lens == [5]
+
 
 class Test_count_traces_in_user_dims:
     def test_d(self, d_all_headers):
@@ -74,6 +86,7 @@ class Test_count_traces_in_user_dims:
     def test_no_d(self):
         dims_ntraces = segy2netcdf._count_traces_in_user_dims(())
         assert dims_ntraces == 1
+
 
 class Test_check_user_dims:
     def test_full_d(self):
@@ -104,6 +117,7 @@ class Test_check_user_dims:
         with pytest.raises(ValueError):
             segy2netcdf._check_user_dims(0, 30)
 
+
 class Test_fill_missing_dims:
     def test_full_d(self):
         dim_names = ['ShotPoint', 'GroupX', 'Time']
@@ -133,6 +147,7 @@ class Test_fill_missing_dims:
         assert dim_names == ['Time']
         assert dim_lens == [0]
 
+
 class Test_create_dimensions:
     def test_multiple_dims(self, rootgrp_empty, dim_names1, dim_lens1):
         segy2netcdf._create_dimensions(dim_names1, dim_lens1, rootgrp_empty)
@@ -148,12 +163,13 @@ class Test_create_dimensions:
             idx = dim_names1.index(name)
             assert dim.size == dim_lens1[idx]
 
+
 class Test_create_variables:
     def test_1(self, rootgrp_dims, dim_names1, dim_lens1):
         segy2netcdf._create_variables(rootgrp_dims, dim_names1, False)
         fields = [attr for attr in dir(segyio.TraceField)
-                if not callable(getattr(segyio.TraceField, attr))
-                and not attr.startswith("__")]
+                  if not callable(getattr(segyio.TraceField, attr))
+                  and not attr.startswith("__")]
         for name, var in rootgrp_dims.variables.items():
             assert name in (['Samples'] + dim_names1 + fields)
             if name == 'Samples':
@@ -167,6 +183,7 @@ class Test_create_variables:
             else:
                 assert var.dimensions == tuple(dim_names1[:-1])
                 assert var.shape == tuple(dim_lens1[:-1])
+
 
 def check_data1(dataset):
     for name, v in dataset.items():
@@ -196,6 +213,7 @@ def check_data1(dataset):
                 assert it[0] == 0
                 it.iternext()
 
+
 def check_samples1(data):
     assert data.size == 3 * 10 * 20
     it = np.nditer(data, ['c_index'], ['readonly'])
@@ -203,15 +221,18 @@ def check_samples1(data):
         assert np.isclose(it[0], it.index + 123.456, atol=1e-4)
         it.iternext()
 
+
 def check_time1(data):
     assert len(data) == 20
     for i, v in enumerate(data):
         assert np.isclose(v, i * 1234.0, atol=1e-1)
 
+
 def check_fieldrecord1(data):
     assert len(data) == 3
     for i, v in enumerate(data):
         assert v == 777 + i
+
 
 def check_groupx1(data):
     assert data.size == 3 * 10
@@ -220,12 +241,14 @@ def check_groupx1(data):
         assert it[0] == 456789+1000*(it.index % 10)
         it.iternext()
 
+
 def check_allconst(data, value):
     assert data.size == 3 * 10
     it = np.nditer(data, [], ['readonly'])
     while not it.finished:
         assert it[0] == value
         it.iternext()
+
 
 def check_linear(data):
     assert data.size == 3 * 10
@@ -234,17 +257,21 @@ def check_linear(data):
         assert it[0] == 1 + it.index
         it.iternext()
 
+
 class Test_copy_data:
     def test_copy1(self, segy1, rootgrp_vars, dim_names1, dim_lens1):
-        segy2netcdf._copy_data(segy1, rootgrp_vars.variables.values(), dim_names1, dim_lens1, False)
+        segy2netcdf._copy_data(segy1, rootgrp_vars.variables.values(),
+                               dim_names1, dim_lens1, False)
         check_data1(rootgrp_vars.variables)
+
 
 class Test_segy2netcdf:
     def test_1(self, tmpdir, dim_names1, dim_lens1):
         # :-1 below to exclude 'Time' dimension, as this is provided separately
-        d = tuple([(x,y) for x,y in zip(dim_names1[:-1], dim_lens1[:-1])])
+        d = tuple([(x, y) for x, y in zip(dim_names1[:-1], dim_lens1[:-1])])
         netcdf_path = tmpdir.join('tmp.nc')
-        segy2netcdf.segy2netcdf('tests/testsegy1.segy', netcdf_path, 'Time', d, False, False)
+        segy2netcdf.segy2netcdf('tests/testsegy1.segy', netcdf_path, 'Time',
+                                d, False, False)
         rootgrp = Dataset(netcdf_path, "r", format="NETCDF4")
         check_data1(rootgrp.variables)
         rootgrp.close()
