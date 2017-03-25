@@ -91,16 +91,16 @@ def _check_user_dims(dims_ntraces, ntraces):
     '''Check that the lengths of the user-provided dimensions make sense.
     '''
     if dims_ntraces > ntraces:
-        raise ValueError('supplied dimensions imply %d traces, '
-                'but only %d in file' % (dims_ntraces, ntraces))
+        raise ValueError('supplied dimensions imply {} traces, '
+                'but only {} in file'.format(dims_ntraces, ntraces))
     if dims_ntraces < 0:
-        raise ValueError('supplied dimensions imply %d traces' % dims_ntraces)
+        raise ValueError('supplied dimensions imply {} traces'.format(dims_ntraces))
     if (dims_ntraces == 0) and (ntraces > 0):
-        raise ValueError('supplied dimensions imply %d traces, ' 
-                'but %d in file' % (dims_ntraces, ntraces))
+        raise ValueError('supplied dimensions imply {} traces, '
+                'but {} in file'.format(dims_ntraces, ntraces))
     if (dims_ntraces != 0) and (ntraces % dims_ntraces != 0):
-        raise ValueError('supplied dimensions imply %d traces, '
-                'but this does not divide into the %d traces in the file' %
+        raise ValueError('supplied dimensions imply {} traces, '
+                'but this does not divide into the {} traces in the file'.format
                 (dims_ntraces, ntraces))
 
 def _fill_missing_dims(dims_ntraces, ntraces, dim_names, dim_lens):
@@ -175,7 +175,7 @@ def _copy_data(segy, variables, dim_names, dim_lens, verbose):
             v[:] = segyio.sample_indexes(segy)
         else:
             if verbose:
-                click.echo('copying %s' % v.name)
+                click.echo('copying {}'.format(v.name))
             v_traceIDs = _get_variable_traceIDs(v, n_trace_dims, dim_names, traceIDs)
             header_field = _get_header_field(v.name)
             v[:] = segy.attributes(header_field)[v_traceIDs.flatten()[:]]
@@ -190,14 +190,14 @@ def _get_variable_traceIDs(variable, n_trace_dims, dim_names, traceIDs):
     for d in v_trace_dims:
         d_idx = dim_names.index(d)
         vdims[d_idx] = ':,'
-    v_traceIDs = np.array(eval('traceIDs[%s]' % ''.join(vdims)))
+    v_traceIDs = np.array(eval('traceIDs[{}]'.format(''.join(vdims))))
     return v_traceIDs
 
 def _get_header_field(name):
     '''Get the position of the requested header value in the trace headers.
     '''
     try:
-        field = eval('segyio.TraceField.%s' % name)
+        field = eval('segyio.TraceField.{}'.format(name))
     except AttributeError:
         field = None
     return field
