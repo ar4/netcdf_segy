@@ -32,7 +32,7 @@ def cli(segy_path, netcdf_path, samples_dim_name, d, compress, verbose):
     '''
     segy2netcdf(segy_path, netcdf_path, samples_dim_name, d, compress, verbose)
 
-def segy2netcdf(segy_path, netcdf_path, samples_dim_name, d, compress, verbose):
+def segy2netcdf(segy_path, netcdf_path, samples_dim_name=None, d=(), compress=False, verbose=False):
     '''Convert a SEG-Y file to a NetCDF file.
 
        segy_path: path to input SEG-Y file

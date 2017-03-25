@@ -9,10 +9,6 @@ netcdf_segy
 .. image:: https://img.shields.io/travis/ar4/netcdf_segy.svg
         :target: https://travis-ci.org/ar4/netcdf_segy
 
-.. image:: https://readthedocs.org/projects/netcdf-segy/badge/?version=latest
-        :target: https://netcdf-segy.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
-
 .. image:: https://pyup.io/repos/github/ar4/netcdf_segy/shield.svg
      :target: https://pyup.io/repos/github/ar4/netcdf_segy/
      :alt: Updates
@@ -20,21 +16,14 @@ netcdf_segy
 
 Convert between SEG-Y and NetCDF
 
+This is currently only a research/demonstration tool. It is not "industrial strength". In particular, it does not run in parallel, so will likely be slow on very large datasets (if it runs at all). Also, only the SEG-Y -> NetCDF direction is implemented.
 
-* Free software: GNU General Public License v3
-* Documentation: https://netcdf-segy.readthedocs.io.
+To install: `pip install netcdf_segy`
 
+To convert a SEG-Y file to NetCDF from the command line: `segy2netcdf <path to input SEG-Y file> <path to output NetCDF file>`. For additional options, look at the help: `segy2netcdf --help`.
 
-Features
---------
+The tool can also be called from a Python script:
+```from netcdf_segy import segy2netcdf
 
-* TODO
-
-Credits
----------
-
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
-
+segy2netcdf(segy_path, netcdf_path)
+```

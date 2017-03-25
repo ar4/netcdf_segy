@@ -6,9 +6,6 @@ from setuptools import setup
 with open('README.rst') as readme_file:
     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
-    history = history_file.read()
-
 requirements = [
     'Click>=6.0',
     'segyio',
@@ -17,14 +14,14 @@ requirements = [
 ]
 
 test_requirements = [
-    # TODO: put package test requirements here
+    'pytest'
 ]
 
 setup(
     name='netcdf_segy',
     version='0.1.0',
     description="Convert between SEG-Y and NetCDF",
-    long_description=readme + '\n\n' + history,
+    long_description=readme,
     author="Alan Richardson",
     author_email='arichar@tcd.ie',
     url='https://github.com/ar4/netcdf_segy',
@@ -35,8 +32,8 @@ setup(
                  'netcdf_segy'},
     entry_points={
         'console_scripts': [
-            'segy2netcdf=netcdf_segy.segy2netcdf:cli',
-            'netcdf2segy=netcdf_segy.netcdf2segy:cli'
+            'segy2netcdf=netcdf_segy.segy2netcdf:cli'#,
+            #'netcdf2segy=netcdf_segy.netcdf2segy:cli'
         ]
     },
     include_package_data=True,
