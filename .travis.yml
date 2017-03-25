@@ -22,12 +22,10 @@ deploy:
   provider: pypi
   distributions: sdist bdist_wheel
 env:
+- TOXENV=py36-dev
 - TOXENV=py35
 - TOXENV=py34
-- TOXENV=py33
 - TOXENV=py27
-- TOXENV=py26
-- TOXENV=pypy
 install: pip install -U tox
 language: python
 python: 3.5
