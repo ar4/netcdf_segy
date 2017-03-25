@@ -19,7 +19,7 @@ test_requirements = [
 
 setup(
     name='netcdf_segy',
-    version='0.1.0',
+    version='1.0.0',
     description="Convert between SEG-Y and NetCDF",
     long_description=readme,
     author="Alan Richardson",
