@@ -27,3 +27,5 @@ The tool can also be called from a Python script::
 from netcdf_segy import segy2netcdf
 
 segy2netcdf(segy_path, netcdf_path)
+
+I have created a Jupyter Notebook to discuss the advantages of NetCDF compared to SEG-Y, show an example of `segy2netcdf` being used, and demonstrate the attractions of loading the resulting NetCDF file with `xarray <http://xarray.pydata.org/>`_: `Alternatives to SEG-Y <https://github.com/ar4/netcdf_segy/blob/master/notebooks/netcdf_segy.ipynb>`_.
