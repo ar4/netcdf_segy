@@ -20,6 +20,8 @@ This is currently only a research/demonstration tool. It is not "industrial stre
 
 To install: ``pip install netcdf_segy``
 
+`SegyIO <https://github.com/Statoil/SegyIO>`_ is a dependency, which can apparently cause installation difficulties on Windows.
+
 To convert a SEG-Y file to NetCDF from the command line: ``segy2netcdf <path to input SEG-Y file> <path to output NetCDF file>``. For additional options, look at the help: ``segy2netcdf --help``.
 
 The tool can also be called from a Python script::
