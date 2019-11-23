@@ -8,34 +8,49 @@ from netCDF4 import Dataset
 
 
 @click.command()
-@click.argument('segy_path', type=click.Path(exists=True, dir_okay=False))
-@click.argument('netcdf_path', type=click.Path())
-@click.option('--samples_dim_name', '-sdn', type=str,
-              help='Name of trace samples dimension (usually Time or Depth)')
-@click.option('-d', type=(str, int), multiple=True,
-              help='Name and length (separated by a space) '
-              'of other dimensions, in slowest to fastest order. If the name '
-              'matches the name of a trace header field (using '
-              'segyio.TraceField names), then the header values will be used '
-              'for the dimension coordinates, otherwise the dimension '
-              'coordinates will start at 0 and increment by 1. '
-              'E.g. -d FieldRecord 10 -d GroupNumber 5, indicates that the '
-              'data consists of 10 shot gathers, each with 5 receiver traces. '
-              'As FieldRecord is a trace header name, the trace header values '
-              'will be used as coordinates for that dimension. GroupNumber is '
-              'not a header name, so the coordinates of that dimension will '
-              'be 0 to 4.')
-@click.option('--compress/--no-compress', default=False,
-              help='turn on or off NetCDF compression (default off).')
-@click.option('--verbose/--quiet', default=False,
-              help='turn on or off verbose output (default off).')
+@click.argument("segy_path", type=click.Path(exists=True, dir_okay=False))
+@click.argument("netcdf_path", type=click.Path())
+@click.option(
+    "--samples_dim_name",
+    "-sdn",
+    type=str,
+    help="Name of trace samples dimension (usually Time or Depth)",
+)
+@click.option(
+    "-d",
+    type=(str, int),
+    multiple=True,
+    help="Name and length (separated by a space) "
+    "of other dimensions, in slowest to fastest order. If the name "
+    "matches the name of a trace header field (using "
+    "segyio.TraceField names), then the header values will be used "
+    "for the dimension coordinates, otherwise the dimension "
+    "coordinates will start at 0 and increment by 1. "
+    "E.g. -d FieldRecord 10 -d GroupNumber 5, indicates that the "
+    "data consists of 10 shot gathers, each with 5 receiver traces. "
+    "As FieldRecord is a trace header name, the trace header values "
+    "will be used as coordinates for that dimension. GroupNumber is "
+    "not a header name, so the coordinates of that dimension will "
+    "be 0 to 4.",
+)
+@click.option(
+    "--compress/--no-compress",
+    default=False,
+    help="turn on or off NetCDF compression (default off).",
+)
+@click.option(
+    "--verbose/--quiet",
+    default=False,
+    help="turn on or off verbose output (default off).",
+)
 def cli(segy_path, netcdf_path, samples_dim_name, d, compress, verbose):
     """Click CLI for segy2netcdf."""
     segy2netcdf(segy_path, netcdf_path, samples_dim_name, d, compress, verbose)
 
 
-def segy2netcdf(segy_path, netcdf_path, samples_dim_name=None, d=(),
-                compress=False, verbose=False):
+def segy2netcdf(
+    segy_path, netcdf_path, samples_dim_name=None, d=(), compress=False, verbose=False
+):
     """Convert a SEG-Y file to a NetCDF file.
 
     Args:
@@ -59,9 +74,9 @@ def segy2netcdf(segy_path, netcdf_path, samples_dim_name=None, d=(),
 
     # set default name for trace samples dimension
     if not samples_dim_name:
-        samples_dim_name = 'SampleNumber'
+        samples_dim_name = "SampleNumber"
 
-    with segyio.open(segy_path) as segy:
+    with segyio.open(segy_path, ignore_geometry=True) as segy:
         ns = len(segy.samples)
         ntraces = segy.tracecount
 
@@ -72,7 +87,7 @@ def segy2netcdf(segy_path, netcdf_path, samples_dim_name=None, d=(),
 
         _fill_missing_dims(dims_ntraces, ntraces, dim_names, dim_lens)
 
-        rootgrp = Dataset(netcdf_path, 'w', format='NETCDF4')
+        rootgrp = Dataset(netcdf_path, "w", format="NETCDF4")
         _create_dimensions(dim_names, dim_lens, rootgrp)
         variables = _create_variables(rootgrp, dim_names, compress)
         _set_attributes(segy, rootgrp)
@@ -119,24 +134,29 @@ def _count_traces_in_user_dims(d):
 def _check_user_dims(dims_ntraces, ntraces):
     """Check that the lengths of the user-provided dimensions make sense."""
     if dims_ntraces > ntraces:
-        raise ValueError('supplied dimensions imply {} traces, '
-                         'but only {} in file'.format(dims_ntraces, ntraces))
+        raise ValueError(
+            "supplied dimensions imply {} traces, "
+            "but only {} in file".format(dims_ntraces, ntraces)
+        )
     if dims_ntraces < 0:
-        raise ValueError('supplied dimensions imply {} traces'
-                         .format(dims_ntraces))
+        raise ValueError("supplied dimensions imply {} traces".format(dims_ntraces))
     if (dims_ntraces == 0) and (ntraces > 0):
-        raise ValueError('supplied dimensions imply {} traces, '
-                         'but {} in file'.format(dims_ntraces, ntraces))
+        raise ValueError(
+            "supplied dimensions imply {} traces, "
+            "but {} in file".format(dims_ntraces, ntraces)
+        )
     if (dims_ntraces != 0) and (ntraces % dims_ntraces != 0):
-        raise ValueError('supplied dimensions imply {} traces, '
-                         'but this does not divide into the {} traces in the '
-                         'file'.format(dims_ntraces, ntraces))
+        raise ValueError(
+            "supplied dimensions imply {} traces, "
+            "but this does not divide into the {} traces in the "
+            "file".format(dims_ntraces, ntraces)
+        )
 
 
 def _fill_missing_dims(dims_ntraces, ntraces, dim_names, dim_lens):
     """Make a new dimension (if necessary) for unaccounted traces."""
     if dims_ntraces < ntraces:
-        dim_names.insert(0, 'Traces')
+        dim_names.insert(0, "Traces")
         dim_lens.insert(0, int(ntraces / dims_ntraces))
 
 
@@ -154,11 +174,13 @@ def _create_variables(rootgrp, dim_names, compress):
     """
     variables = []
     # Trace data
-    variables.append(rootgrp.createVariable('Samples', 'f4', tuple(dim_names),
-                                            zlib=compress))
+    variables.append(
+        rootgrp.createVariable("Samples", "f4", tuple(dim_names), zlib=compress)
+    )
     # Time/Depth dimension
-    variables.append(rootgrp.createVariable(dim_names[-1], 'f4',
-                                            dim_names[-1], zlib=compress))
+    variables.append(
+        rootgrp.createVariable(dim_names[-1], "f4", dim_names[-1], zlib=compress)
+    )
     # Other dimensions
     variables += _create_traceheader_variables(rootgrp, dim_names, compress)
     return variables
@@ -170,21 +192,24 @@ def _create_traceheader_variables(rootgrp, dim_names, compress):
        Fields that are used as dimensions are only the length of that
        dimension, others have one entry for every trace.
     """
-    fields = [attr for attr in dir(segyio.TraceField)
-              if not callable(getattr(segyio.TraceField, attr))
-              and not attr.startswith('__')]
+    fields = [
+        attr
+        for attr in dir(segyio.TraceField)
+        if not callable(getattr(segyio.TraceField, attr)) and not attr.startswith("__")
+    ]
     variables = []
     for field in fields:
         # for variables that are dimensions of the dataset, they should be the
         # size of their dimension. All others should be the size of the dataset
         # (excluding the trace samples dimension)
         if field in dim_names:
-            variables.append(rootgrp.createVariable(field, 'i4', field,
-                                                    zlib=compress))
+            variables.append(rootgrp.createVariable(field, "i4", field, zlib=compress))
         else:
-            variables.append(rootgrp.createVariable(field, 'i4',
-                                                    tuple(dim_names[:-1]),
-                                                    zlib=compress))
+            variables.append(
+                rootgrp.createVariable(
+                    field, "i4", tuple(dim_names[:-1]), zlib=compress
+                )
+            )
 
     return variables
 
@@ -192,9 +217,9 @@ def _create_traceheader_variables(rootgrp, dim_names, compress):
 def _set_attributes(segy, rootgrp):
     """Copy the file headers (binary and text) to the NetCDF file."""
     rootgrp.bin = str(segy.bin)
-    rootgrp.text = segy.text[0]
+    rootgrp.text = segy.text[0].decode()
     if segy.ext_headers:
-        rootgrp.ext_headers = segy.text[1]
+        rootgrp.ext_headers = segy.text[1].decode()
 
 
 def _copy_data(segy, variables, dim_names, dim_lens, verbose):
@@ -206,21 +231,22 @@ def _copy_data(segy, variables, dim_names, dim_lens, verbose):
     traceIDs = np.reshape(np.arange(segy.tracecount), dim_lens[:-1])
     n_trace_dims = len(dim_names[:-1])
     for v in variables:
-        if v.name == 'Samples':
+        if v.name == "Samples":
             if verbose:
-                click.echo('copying trace data')
-            v[:] = segy.trace.raw[:]
+                click.echo("copying trace data")
+            v[:] = segy.trace.raw[:].reshape(v.shape)
         elif v.name == dim_names[-1]:
             if verbose:
-                click.echo('copying time/depth indices')
-            v[:] = segyio.sample_indexes(segy)
+                click.echo("copying time/depth indices")
+            v[:] = np.array(segyio.sample_indexes(segy)).reshape(v.shape)
         else:
             if verbose:
-                click.echo('copying {}'.format(v.name))
-            v_traceIDs = _get_variable_traceIDs(v, n_trace_dims, dim_names,
-                                                traceIDs)
+                click.echo("copying {}".format(v.name))
+            v_traceIDs = _get_variable_traceIDs(v, n_trace_dims, dim_names, traceIDs)
             header_field = _get_header_field(v.name)
-            v[:] = segy.attributes(header_field)[v_traceIDs.flatten()[:]]
+            v[:] = segy.attributes(header_field)[v_traceIDs.flatten()[:]].reshape(
+                v.shape
+            )
 
 
 def _get_variable_traceIDs(variable, n_trace_dims, dim_names, traceIDs):
@@ -230,19 +256,19 @@ def _get_variable_traceIDs(variable, n_trace_dims, dim_names, traceIDs):
        contain unique values for them, while other headers will copy from
        every trace.
     """
-    vdims = ['1,'] * n_trace_dims
+    vdims = [slice(1)] * n_trace_dims
     v_trace_dims = variable.dimensions
     for d in v_trace_dims:
         d_idx = dim_names.index(d)
-        vdims[d_idx] = ':,'
-    v_traceIDs = np.array(eval('traceIDs[{}]'.format(''.join(vdims))))
+        vdims[d_idx] = slice(None)
+    v_traceIDs = traceIDs[tuple(vdims)]
     return v_traceIDs
 
 
 def _get_header_field(name):
     """Get the position of the requested header value in the trace headers."""
     try:
-        field = eval('segyio.TraceField.{}'.format(name))
-    except AttributeError:
+        field = segyio.tracefield.keys[name]
+    except KeyError:
         field = None
     return field
