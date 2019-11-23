@@ -1,0 +1,4 @@
+click
+segyio
+numpy
+netCDF4

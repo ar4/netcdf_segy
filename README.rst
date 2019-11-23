@@ -12,15 +12,15 @@ This is currently only a research/demonstration tool. It is not "industrial stre
 
 To install: ``pip install netcdf_segy``
 
-`https://github.com/equinor/segyio>`_ is a dependency.
+`SegyIO <https://github.com/equinor/segyio>`_ is a dependency.
 
 To convert a SEG-Y file to NetCDF from the command line: ``segy2netcdf <path to input SEG-Y file> <path to output NetCDF file>``. For additional options, look at the help: ``segy2netcdf --help``.
 
 The tool can also be called from a Python script::
 
-from netcdf_segy.segy2netcdf import segy2netcdf
+    from netcdf_segy.segy2netcdf import segy2netcdf
 
-segy2netcdf(segy_path, netcdf_path)
+    segy2netcdf(segy_path, netcdf_path)
 
 I have created a Jupyter Notebook to discuss the advantages of NetCDF compared to SEG-Y, show an example of ``segy2netcdf`` being used, and demonstrate the attractions of loading the resulting NetCDF file with `xarray <http://xarray.pydata.org/>`_: `Alternatives to SEG-Y <https://github.com/ar4/netcdf_segy/blob/master/notebooks/netcdf_segy.ipynb>`_.
 

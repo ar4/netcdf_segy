@@ -217,9 +217,9 @@ def _create_traceheader_variables(rootgrp, dim_names, compress):
 def _set_attributes(segy, rootgrp):
     """Copy the file headers (binary and text) to the NetCDF file."""
     rootgrp.bin = str(segy.bin)
-    rootgrp.text = segy.text[0].decode()
+    rootgrp.text = segy.text[0].decode(errors='replace')
     if segy.ext_headers:
-        rootgrp.ext_headers = segy.text[1].decode()
+        rootgrp.ext_headers = segy.text[1].decode(errors='replace')
 
 
 def _copy_data(segy, variables, dim_names, dim_lens, verbose):
@@ -239,14 +239,18 @@ def _copy_data(segy, variables, dim_names, dim_lens, verbose):
             if verbose:
                 click.echo("copying time/depth indices")
             v[:] = np.array(segyio.sample_indexes(segy)).reshape(v.shape)
-        else:
+        elif v.name in dim_names[:-1]:
             if verbose:
                 click.echo("copying {}".format(v.name))
             v_traceIDs = _get_variable_traceIDs(v, n_trace_dims, dim_names, traceIDs)
             header_field = _get_header_field(v.name)
             v[:] = segy.attributes(header_field)[v_traceIDs.flatten()[:]].reshape(
-                v.shape
-            )
+                v.shape)
+        else:
+            if verbose:
+                click.echo("copying {}".format(v.name))
+            header_field = _get_header_field(v.name)
+            v[:] = segy.attributes(header_field)[:].reshape(v.shape)
 
 
 def _get_variable_traceIDs(variable, n_trace_dims, dim_names, traceIDs):
@@ -267,8 +271,4 @@ def _get_variable_traceIDs(variable, n_trace_dims, dim_names, traceIDs):
 
 def _get_header_field(name):
     """Get the position of the requested header value in the trace headers."""
-    try:
-        field = segyio.tracefield.keys[name]
-    except KeyError:
-        field = None
-    return field
+    return segyio.tracefield.keys[name]
